@@ -86,7 +86,7 @@ namespace Epollpp{
         memset(buffer, '\0', size);
 
         int recvLen = 0;
-        int count = 0;
+        int tryCount = 0;
 
         int result = 0;
         while (true){
@@ -97,7 +97,7 @@ namespace Epollpp{
                     break;
             }
             else if (result < 0 && errno == EAGAIN){
-                if (++count == 5){
+                if (++tryCount == 5){
                     this->Close();
                     return nullptr;
                 }
@@ -118,7 +118,7 @@ namespace Epollpp{
 
         std::vector<std::string>* msgs = nullptr;
         int result = 0;
-        int count = 0;
+        int tryCount = 0;
         while (true){
             memset(buffer, '\0', 1024);
             result = recv(clientFD, buffer, 1024, MSG_DONTWAIT);
@@ -131,7 +131,7 @@ namespace Epollpp{
                 }
             }
             else if (result == -1 && errno == EAGAIN){
-                if (++count == 3){
+                if (++tryCount == 3){
                     msgs = StringHandler::Split(ssBuffer.str(), delimiter);
                     ssBuffer.str(std::string());
                     ssBuffer << msgs->at(msgs->size() -1);
@@ -156,17 +156,17 @@ namespace Epollpp{
     void TCPConn::Send(const char* msg, int length){
         if (length == 0) return;
         if (clientFD == -1) return;
-        int count = 0;
-        int sended = 0;
+        int tryCount = 0;
+        int sentCount = 0;
         int result = 0;
         pthread_mutex_lock(&lock_send);
         while (true){
-            result = send(clientFD, msg + sended, length - sended, MSG_DONTWAIT);
+            result = send(clientFD, msg + sentCount, length - sentCount, MSG_DONTWAIT);
             if (result > 0){
-                sended += result;
+                sentCount += result;
             }
             else if (result < 0 && errno == EAGAIN){
-                if (++count == 3 && sended == 0) break; // Forgive to send this message.
+                if (++tryCount == 3 && sentCount == 0) break; // drop the packet when can't send.
                 usleep(1000);
             }
             else{
@@ -255,10 +255,10 @@ namespace Epollpp{
                         if (events[i].data.fd == epollServer->socketFD){ // Accept Client.
                             epollServer->Accept();
                         }
-                        else if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP || events[i].events & EPOLLRDHUP){ // When Error or Disconnect
+                        else if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP || events[i].events & EPOLLRDHUP){ // When Error or Disconnect.
                             epollServer->Remove(events[i].data.fd);
                         }
-                        else if (events[i].events & EPOLLIN){
+                        else if (events[i].events & EPOLLIN){ // Data coming.
                             epollServer->Process(events[i].data.fd);
                         }
                     }
