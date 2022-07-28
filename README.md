@@ -21,6 +21,7 @@ Example Echo Server
 #include <Epollpp/Epollpp.hpp>
 
 using namespace std;
+using namespace Epollpp;
 
 int main(){
     // Set the port on 9090, ETMode set to false because not support now.
