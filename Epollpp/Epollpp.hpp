@@ -124,6 +124,8 @@ namespace Epollpp{
             result = recv(clientFD, buffer, 1024, MSG_DONTWAIT);
             if (result > 0){
                 ssBuffer << buffer;
+
+                if (ssBuffer.str().length() < delimiter.length()) continue;
                 if (StringHandler::EndWith(ssBuffer.str(), delimiter)){
                     msgs = StringHandler::Split(ssBuffer.str(), delimiter);
                     ssBuffer.str(std::string());
@@ -192,23 +194,25 @@ namespace Epollpp{
         int socketFD = -1, epollFD = -1;
         sockaddr_in sockAddr;
         std::function<void(EpollServer*, TCPConn*)> ProcessFunc;
+        std::function<void(TCPConn*)> CleanUpFunc;
         void Accept();
     public:
         std::unordered_map<int, TCPConn*> fd2Clients;
 
-        EpollServer(int, bool, std::function<void(EpollServer*, TCPConn*)>);
+        EpollServer(int, bool, std::function<void(EpollServer*, TCPConn*)>, std::function<void(TCPConn*)>);
         void Start();
         void Remove(int);
         void Process(int);
     };
 
-    EpollServer::EpollServer(int port, bool ETmode, std::function<void(EpollServer*, TCPConn*)> ProcessFunc){
+    EpollServer::EpollServer(int port, bool ETmode, std::function<void(EpollServer*, TCPConn*)> ProcessFunc, std::function<void(TCPConn*)> CleanUpFunc){
         if (port < 1 || port > 65535){
             std::cout << "Port: " << port << " is not Avaliable." << std::endl;
             exit(1);
         }
         this->port = port;
         this->ProcessFunc = ProcessFunc;
+        this->CleanUpFunc = CleanUpFunc;
     }
 
     void EpollServer::Start(){
@@ -305,7 +309,6 @@ namespace Epollpp{
         ClientInEvent.data.fd = clientFD;
 
         epoll_ctl(epollFD, EPOLL_CTL_ADD, clientFD, &ClientInEvent);
-        std::cout << "Client Connected, FD:" << clientFD << std::endl;
         pthread_mutex_unlock(&lock_clients);
     }
 
@@ -324,8 +327,9 @@ namespace Epollpp{
 
         if (clientConn != nullptr){
             epoll_ctl(epollFD, EPOLL_CTL_DEL, clientConn->originFD, nullptr);
+
+            CleanUpFunc(clientConn);
             clientConn->Close();
-            std::cout << "Client Disconnected, FD: " << clientFD << std::endl;
             delete(clientConn);
         }
     }
