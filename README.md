@@ -36,17 +36,23 @@ using namespace Epollpp;
 int main(){
     // Set the port on 9090, ETMode set to false because not support now.
     // Write a lambda function for processing data-in.
-    EpollServer server(9090, false, [](EpollServer* server, TCPConn* client)->void{
-        vector<string>* msgs = client->Recv("\r\n");
-        if (msg == nullptr) return;
+    // Write another function for cleanup or Write a empty function.
+    EpollServer server(9090, false,
+        [](EpollServer* server, TCPConn* client)->void{
+            vector<string>* msgs = client->Recv("\r\n");
+            if (msg == nullptr) return;
 
-        for (int i = 0; i < msg->size(); i++){
-            cout << msg->at(i) << endl; // Print Message
-            client->Send(msg->at(i)); // Send Message back to client.
+            for (int i = 0; i < msg->size(); i++){
+                cout << msg->at(i) << endl; // Print Message
+                client->Send(msg->at(i)); // Send Message back to client.
+            }
+
+            delete msgs;
+        },
+        [](TCPConn* client)->void{
+            cout << "Client Exited. FD:" << client->originFD << endl;
         }
-
-        delete msgs;
-    });
+    );
     
     // Start Server
     server.Start();
