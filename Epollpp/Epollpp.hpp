@@ -44,6 +44,7 @@ namespace Epollpp{
         }
         
         static bool StartWith(const string& source, const string& start){
+            if (source.length() < start.length()) return false;
             return source.substr(0, start.length()) == start;
         }
         static bool StartWith(const char* source , const string& start){
@@ -51,6 +52,7 @@ namespace Epollpp{
         }
         
         static bool EndWith(const string& source, const string& end){
+            if (source.length() < end.length()) return false;
             return source.substr(source.length() - end.length() , -1) == end;
         }
         static bool EndWith(const char* source, const string& end){
@@ -125,7 +127,6 @@ namespace Epollpp{
             if (result > 0){
                 ssBuffer << buffer;
 
-                if (ssBuffer.str().length() < delimiter.length()) continue;
                 if (StringHandler::EndWith(ssBuffer.str(), delimiter)){
                     msgs = StringHandler::Split(ssBuffer.str(), delimiter);
                     ssBuffer.str(std::string());

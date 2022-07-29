@@ -44,7 +44,7 @@ int main(){
 
             for (int i = 0; i < msg->size(); i++){
                 cout << msg->at(i) << endl; // Print Message
-                client->Send(msg->at(i)); // Send Message back to client.
+                client->Send(msg->at(i)+"\r\n"); // Send Message back to client.
             }
 
             delete msgs;
