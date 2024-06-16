@@ -1,5 +1,8 @@
 # Epollpp - A Simple Epoll TCP Server Library.
 
+## Warning
+This project is stop maintenance. Please go to [SafetyTcpConn](https:/github.com/KingsFourze/SafetyTcpConn). Which is a epoll tcp server similar as Epollpp but `more safety and powerful`.
+
 ## Supported Platform
 
 * Linux (Kernel 2.6.17 or newer), but only tested on AlmaLinux 8.6 x86_64 (Kernel 4.18.0-372)
